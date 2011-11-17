@@ -14,6 +14,14 @@
 <br>
 <span id="result"></span>
 <br>
+<h2>Purpose</h2>
+<p>The goal of this application is to use genetic programming to find a function that matched given input.</p>
+<h2>How it works</h2>
+<p>A population of functions is generated at random, and they compete to reproduce into the next generation. Functions can have variable length (up to a certain limit), so they can grow and shrink as they evolve. The fitness is calculated by comparing the function to seveal known values of the target function. The lower the fitness, the better. Each function consists of the functions ['+','-','*','/','sin','cos','exp'], and terminals ['x','R'] (where R is any integer from 1 to 10).</p>
+<h3>Function A</h3>
+<p>The target funtion is 3x<sup>3</sup> + 2x<sup>2</sup> + x + 1. The fitness is calculated by comparing x,y values: [[-5,-329],[-4.5,-236.375],[-4,-163],[-3.5,-106.625],[-3,-65],[-2.5,-35.875],[-2,-17],[-1.5,-6.125],[-1,-1],[-0.5,0.625],[0,1],[0.5,2.375],[1,7],[1.5,17.125],[2,35],[2.5,62.875],[3,103],[3.5,157.625],[4,229],[4.5,319.375],[5,431]].</p>
+<h3>Function B</h3>
+<p>The target funtion is cos(x) + 3sin(x<sup>2</sup>). The fitness is calculated by comparing x,y values: [[-5,-0.11339306483009282],[-4.5,2.745779535264579],[-4,-1.5173535708588077],[-3.5,-1.8698147522341784],[-3,0.24636295912482442],[-2.5,-0.9006812651896041],[-2,-2.686554322470927],[-1.5,2.404956792331467],[-1,3.064715260291829],[-0.5,1.6197944396539414],[0,1],[0.5,1.6197944396539414],[1,3.064715260291829],[1.5,2.404956792331467],[2,-2.686554322470927],[2.5,-0.9006812651896041],[3,0.24636295912482442],[3.5,-1.8698147522341784],[4,-1.5173535708588077],[4.5,2.745779535264579],[5,-0.11339306483009282]]</p>
 
 <script type="text/javascript">
 var ctx = document.getElementById('canvas').getContext("2d");
@@ -75,7 +83,7 @@ function handle_worker_message_A(data){
 		return false;
 	}
 	if(resultObj.act == "generation"){
-		$('#result').prepend(chromosome_to_string(resultObj.data.chromosome)+" <strong>("+resultObj.data.fitness+")<\/strong><br>");
+		$('#result').prepend("Best function of Generation "+resultObj.gen+": "+chromosome_to_string(resultObj.data.chromosome)+" fitness:<strong>("+resultObj.data.fitness+")<\/strong><br>");
 		draw_function(resultObj.data.chromosome);
 		return true;
 	}
@@ -95,7 +103,7 @@ function handle_worker_message_B(data){
 		return false;
 	}
 	if(resultObj.act == "generation"){
-		$('#result').prepend(chromosome_to_string(resultObj.data.chromosome)+" <strong>("+resultObj.data.fitness+")<\/strong><br>");
+		$('#result').prepend("Best function of Generation "+resultObj.gen+": "+chromosome_to_string(resultObj.data.chromosome)+" fitness:<strong>("+resultObj.data.fitness+")<\/strong><br>");
 		draw_function(resultObj.data.chromosome);
 		return true;
 	}

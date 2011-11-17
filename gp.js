@@ -98,6 +98,7 @@ function iterGP(){
 	//report best so far
 	var message = new Object();
 	message.act = "generation";
+	message.gen = gen;
 	message.data = population[population.length-1];
 	postMessage(JSON.stringify(message));
 	
