@@ -29,19 +29,40 @@ function init(){
 }
 
 function load(array){
-	config.target_fitness = array;
+	$('#inputs').find('tr').each(function(index,e){
+		$(e).find('input').each(function(subindex,input){
+			if(array && array[index-1]){
+				$(input).val(array[index-1][subindex]);
+			}else{
+				$(input).val('');
+			}
+		});
+	});
 }
 
 //start the run loop
 function start(){
 	if(running) return;
+	config.target_fitness = [];
+	$('#inputs').find('tr').each(function(index,e){
+		var inputs = $(e).find('input');
+		console.log(inputs);
+		if(inputs.length > 1
+			&& inputs[0].value != ''
+			&& inputs[1].value != ''
+			&& !isNaN(inputs[0].value)
+			&& !isNaN(inputs[1].value)){
+			config.target_fitness.push([inputs[0].value,inputs[1].value])
+		}
+	});
+
 	if(!config.target_fitness || config.target_fitness.length < 1){
 		$('#result').html("No target values specified. Unable to determine function fitness.");
 		return;
 	}
 	running = true;
 
-	// TODO: load config.target_fitness based on entered values
+
 	$('#result').empty();
 
 	worker.onmessage = function(event) {
