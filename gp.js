@@ -16,38 +16,36 @@ config.tree_limit_initial = 6;
 config.tree_limit_running = 17;
 var worker;
 
+var a_fitness = [[-5,-329],[-4.5,-236.375],[-4,-163],[-3.5,-106.625],[-3,-65],[-2.5,-35.875],[-2,-17],[-1.5,-6.125],[-1,-1],[-0.5,0.625],[0,1],[0.5,2.375],[1,7],[1.5,17.125],[2,35],[2.5,62.875],[3,103],[3.5,157.625],[4,229],[4.5,319.375],[5,431]];
+var b_fitness = [[-5,-0.11339306483009282],[-4.5,2.745779535264579],[-4,-1.5173535708588077],[-3.5,-1.8698147522341784],[-3,0.24636295912482442],[-2.5,-0.9006812651896041],[-2,-2.686554322470927],[-1.5,2.404956792331467],[-1,3.064715260291829],[-0.5,1.6197944396539414],[0,1],[0.5,1.6197944396539414],[1,3.064715260291829],[1.5,2.404956792331467],[2,-2.686554322470927],[2.5,-0.9006812651896041],[3,0.24636295912482442],[3.5,-1.8698147522341784],[4,-1.5173535708588077],[4.5,2.745779535264579],[5,-0.11339306483009282]];
+
 
 function init(){
 	ctx = document.getElementById('canvas').getContext("2d");
 	worker = new Worker("gp-worker.js");
-	worker.onerror = function(error) {	
+	worker.onerror = function(error) {
 		console.log(error.message);
 	};
 }
 
+function load(array){
+	config.target_fitness = array;
+}
+
 //start the run loop
-function A_init(){
+function start(){
 	if(running) return;
+	if(!config.target_fitness || config.target_fitness.length < 1){
+		$('#result').html("No target values specified. Unable to determine function fitness.");
+		return;
+	}
 	running = true;
-	config.fitness_alg = "A";
+
+	// TODO: load config.target_fitness based on entered values
 	$('#result').empty();
-	
+
 	worker.onmessage = function(event) {
-		handle_worker_message_A(event.data);
-	};
-	var message = new Object();
-	message.act = "init";
-	message.data = config;
-	worker.postMessage(JSON.stringify(message));
-}
-function B_init(){
-	if(running) return;
-	running = true;
-	config.fitness_alg = "B";
-	$('#result').empty();
-	
-	worker.onmessage = function(event) {
-		handle_worker_message_B(event.data);
+		handle_worker_message(event.data);
 	};
 	var message = new Object();
 	message.act = "init";
@@ -55,27 +53,7 @@ function B_init(){
 	worker.postMessage(JSON.stringify(message));
 }
 
-function handle_worker_message_A(data){
-	var resultObj = JSON.parse(data);
-	if(resultObj.act == "debug"){
-		$('#result').prepend(resultObj.data+"<br>");
-		return false;
-	}
-	if(resultObj.act == "generation"){
-		$('#result').prepend("Best function of Generation "+resultObj.gen+": "+chromosome_to_string(resultObj.data.chromosome)+" fitness:<strong>("+resultObj.data.fitness+")<\/strong><br>");
-		draw_function(resultObj.data.chromosome);
-		return true;
-	}
-	if(resultObj.act == "answer"){
-		$('#result').prepend("Answer: <strong>"+chromosome_to_string(resultObj.data.best.chromosome)+"<\/strong><br>With a fitness of <strong>"+resultObj.data.best.fitness+"<\/strong><br>Performed <strong>"+resultObj.data.fitness_evaluations+"<\/strong> fitness evaluations in <strong>"+resultObj.data.gen+"<\/strong> generations.<br>");
-		draw_function(resultObj.data.best.chromosome);
-		running = false;
-		return true;
-	}
-}
-
-
-function handle_worker_message_B(data){
+function handle_worker_message(data){
 	var resultObj = JSON.parse(data);
 	if(resultObj.act == "debug"){
 		$('#result').prepend(resultObj.data+"<br>");
@@ -145,7 +123,7 @@ function draw_function(function_tree){
 	ctx.lineTo(360,205);
 	ctx.moveTo(400,200);
 	ctx.lineTo(400,205);
-	
+
 	ctx.moveTo(160,200);
 	ctx.lineTo(160,205);
 	ctx.moveTo(120,200);
@@ -156,7 +134,7 @@ function draw_function(function_tree){
 	ctx.lineTo(40,205);
 	ctx.moveTo(0,200);
 	ctx.lineTo(0,205);
-	
+
 	ctx.moveTo(200,240);
 	ctx.lineTo(195,240);
 	ctx.moveTo(200,280);
@@ -167,7 +145,7 @@ function draw_function(function_tree){
 	ctx.lineTo(195,360);
 	ctx.moveTo(200,400);
 	ctx.lineTo(195,400);
-	
+
 	ctx.moveTo(200,160);
 	ctx.lineTo(195,160);
 	ctx.moveTo(200,120);
@@ -202,17 +180,17 @@ function draw_function(function_tree){
 	ctx.strokeText('5',180,10);
 	ctx.strokeText('-5',5,220);
 	ctx.strokeText('-5',180,395);
-	
+
 	//x = 200 + x*40
 	//y = 200 - y*40
 
-	ctx.beginPath();
-	ctx.moveTo(0,calc_func(-5.0));
-	for(var x = -5.0;x<=5;x = x+1/40){
-		ctx.lineTo(200 + x*40,200 - calc_func(x)*40);
+	for(var i = 0;i<config.target_fitness.length;i++){
+		ctx.beginPath();
+		ctx.arc(200 + config.target_fitness[i][0]*40, 200 - config.target_fitness[i][1] * 40, 3, 0, 2 * Math.PI, false);
+		ctx.fill();
 	}
-	ctx.stroke();
-	
+
+
 	ctx.beginPath();
 	ctx.moveTo(0,eval_tree(function_tree,-5.0));
 	for(var x = -5.0;x<=5;x = x+1/40){
@@ -247,15 +225,4 @@ function eval_tree(tree,x){
 		}
 	}
 	return 0;
-}
-
-function calc_func(x){
-	if(config.fitness_alg == 'A'){
-		return 3 * Math.pow(x,3) + 2*Math.pow(x,2) + x + 1;
-	}
-	if(config.fitness_alg == 'B'){
-		return Math.cos(x) + 3*Math.sin(Math.pow(x,2));
-		
-	}
-	return Math.cos(x) + 3*Math.sin(Math.pow(x,2));
 }

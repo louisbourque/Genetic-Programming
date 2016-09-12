@@ -18,9 +18,10 @@
 </head>
 <body onload='init();'>
 
-<input type="button" value="Start A" onclick="A_init();">&nbsp;&nbsp;
-<input type="button" value="Start B" onclick="B_init();">&nbsp;&nbsp;
-<input type="button" style="color:red;" value="Stop" onclick="stop();">&nbsp;&nbsp;
+<button onclick="load(a_fitness);">Load: 3x<sup>3</sup> + 2x<sup>2</sup> + x + 1</button>&nbsp;&nbsp;
+<button onclick="load(b_fitness);">Load: cos(x) + 3sin(x<sup>2</sup>)</button>&nbsp;&nbsp;
+<button onclick="start();">Start</button>&nbsp;&nbsp;
+<button style="color:red;" onclick="stop();">Stop</button>&nbsp;&nbsp;
 <br>
 <canvas id="canvas" width="400" height="400" style="border:1px solid black"></canvas>
 <br>

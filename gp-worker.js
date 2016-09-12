@@ -21,8 +21,6 @@ var fitness_evaluations;
 var measure_fitness;
 var crossover_function;
 
-var a_fitness = [[-5,-329],[-4.5,-236.375],[-4,-163],[-3.5,-106.625],[-3,-65],[-2.5,-35.875],[-2,-17],[-1.5,-6.125],[-1,-1],[-0.5,0.625],[0,1],[0.5,2.375],[1,7],[1.5,17.125],[2,35],[2.5,62.875],[3,103],[3.5,157.625],[4,229],[4.5,319.375],[5,431]];
-var b_fitness = [[-5,-0.11339306483009282],[-4.5,2.745779535264579],[-4,-1.5173535708588077],[-3.5,-1.8698147522341784],[-3,0.24636295912482442],[-2.5,-0.9006812651896041],[-2,-2.686554322470927],[-1.5,2.404956792331467],[-1,3.064715260291829],[-0.5,1.6197944396539414],[0,1],[0.5,1.6197944396539414],[1,3.064715260291829],[1.5,2.404956792331467],[2,-2.686554322470927],[2.5,-0.9006812651896041],[3,0.24636295912482442],[3.5,-1.8698147522341784],[4,-1.5173535708588077],[4.5,2.745779535264579],[5,-0.11339306483009282]];
 
 
 //this is the function that is called whenever the worker receives a message.
@@ -36,7 +34,7 @@ onmessage = function(event) {
 		case 'init':
 			stop_running = false;
 			config = message.data;
-			
+
 			run = 0;
 			fitness_evaluations = 0;
 			runGP();
@@ -69,11 +67,11 @@ function iterGP(){
 		population.sort( function (a,b) { return b.fitness-a.fitness });
 	else
 		population.sort( function (a,b) { return a.fitness-b.fitness });
-	
+
 	//if best solution has a fitness less than 0.001, we can stop
 	if(population[population.length-1].fitness < 0.001)
 		stop_running = true;
-	
+
 	//termination sat for run?
 	if(stop_running || config.maxGenerations == gen){
 		run++;
@@ -90,14 +88,14 @@ function iterGP(){
 		}
 		return true;
 	}
-	
+
 	//report best so far
 	var message = new Object();
 	message.act = "generation";
 	message.gen = gen;
 	message.data = population[population.length-1];
 	postMessage(JSON.stringify(message));
-	
+
 	var newPopulation = new Array();
 	for(var i = 0;!stop_running && i<population.length;){
 		var rnum = Math.random();
@@ -123,7 +121,7 @@ function iterGP(){
 			child2.chromosome = crossover_function(individual1.chromosome,individual2.chromosome);
 			child1.fitness = measure_fitness(child1.chromosome);
 			child2.fitness = measure_fitness(child2.chromosome);
-			
+
 			var candidates = new Array();
 			candidates.push(individual1);
 			candidates.push(individual2);
@@ -146,9 +144,9 @@ function iterGP(){
 		newPopulation = newPopulation.concat(population.splice(newPopulation.length));
 	}
 	population = newPopulation;
-	
+
 	gen++;
-	
+
 	runTimeout = setTimeout(iterGP, 5);
 }
 
@@ -161,9 +159,9 @@ function crossover_function(parent1, parent2){
 
 	var parent2_func_nodes = new Array();
 	var parent2_term_nodes = new Array();
-	map_nodes(parent2,parent2_func_nodes,parent2_term_nodes);	
+	map_nodes(parent2,parent2_func_nodes,parent2_term_nodes);
 	//copy parent1 to a new tree - need to do this so we don't modify the original parent1
-	
+
 	//choose which to crossover on (function or terminal)
 	if(Math.random() > 0.9 || child_func_nodes.length == 0)
 		var c_crossover_nodes = child_term_nodes;
@@ -173,21 +171,21 @@ function crossover_function(parent1, parent2){
 	if(Math.random() > 0.9 || parent2_func_nodes.length == 0)
 		var p2_crossover_nodes = parent2_term_nodes;
 	else
-		var p2_crossover_nodes = parent2_func_nodes;	
+		var p2_crossover_nodes = parent2_func_nodes;
 	//choose which node to crossover on
 	c_crossover_node = c_crossover_nodes[Math.floor(Math.random() * c_crossover_nodes.length)];
 	p2_crossover_node = p2_crossover_nodes[Math.floor(Math.random() * p2_crossover_nodes.length)];
-	
+
 	//copy nodes from parent 2, replace in child
 	c_crossover_node.action = p2_crossover_node.action;
 	c_crossover_node.arg1 = copy_tree(p2_crossover_node.arg1);
 	c_crossover_node.arg2 = copy_tree(p2_crossover_node.arg2);
-	
+
 	//prevent bloat by returning a parent instead of the child if the child is too large
 	if(depth_of_tree(child) > config.tree_limit_running)
 		return parent1;
 	return child;
-	
+
 }
 
 function depth_of_tree(node){
@@ -209,7 +207,7 @@ function map_nodes(node,func_nodes,term_nodes){
 		func_nodes[func_nodes.length] = node;
 	else
 		term_nodes[term_nodes.length] = node;
-	
+
 	map_nodes(node.arg1,func_nodes,term_nodes);
 	map_nodes(node.arg2,func_nodes,term_nodes);
 }
@@ -235,14 +233,11 @@ function trees_equal(tree1,tree2){
 
 function measure_fitness(chromosome){
 	fitness_evaluations++;
-	var target_fitness = a_fitness;
-	if(config.fitness_alg == 'B')
-		target_fitness = b_fitness;
 	var fitness = 0;
 	var x = 0;
-	for(var i = 0;i<target_fitness.length;i++){
-		x = target_fitness[i][0];
-		fitness = fitness + Math.abs(target_fitness[i][1] - eval_tree(chromosome,x));
+	for(var i = 0;i<config.target_fitness.length;i++){
+		x = config.target_fitness[i][0];
+		fitness = fitness + Math.abs(config.target_fitness[i][1] - eval_tree(chromosome,x));
 		if(isNaN(fitness)){
 			return 999999;
 		}
@@ -308,7 +303,7 @@ function generate_chromosome(grow) {
 
 function generate_chromosome_recursive(node, limit, grow){
 	//if grow is true, use Grow Method
-	
+
 	//in both methods, only choose terminals at max depth
 	if(limit <= 0){
 		var rnum = Math.floor(Math.random() * config.chromosome_terminal.length);
@@ -317,13 +312,13 @@ function generate_chromosome_recursive(node, limit, grow){
 			node.action = Math.ceil(Math.random()*10);
 		return node;
 	}
-	
+
 	//choose any function or terminal to grow
 	if(grow){
 		var functerm = config.chromosome_function.concat(config.chromosome_terminal);
 		var rnum = Math.floor(Math.random() * functerm.length);
 		node.action = functerm[rnum];
-		
+
 		if(rnum >= config.chromosome_function.length){
 			//action was a terminal
 			if(node.action == 'R')
@@ -334,11 +329,11 @@ function generate_chromosome_recursive(node, limit, grow){
 		node.arg2 = generate_chromosome_recursive(new Node(), limit-1);
 		return node;
 	}
-	
+
 	//choose any function to grow
 	var rnum = Math.floor(Math.random() * config.chromosome_function.length);
 	node.action = config.chromosome_function[rnum];
-	
+
 	node.arg1 = generate_chromosome_recursive(new Node(), limit-1);
 	node.arg2 = generate_chromosome_recursive(new Node(), limit-1);
 	return node;
