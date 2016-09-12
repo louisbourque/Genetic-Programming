@@ -3,6 +3,13 @@
 <meta name=viewport content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="css/normalize.css">
 <link rel="stylesheet" href="css/h5bp.css">
+<style>
+@media only screen and (min-width: 490px) {
+    #canvas{
+      margin:3em;
+    }
+}
+</style>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="gp.js"></script>
 <script>
@@ -24,7 +31,7 @@
 <button onclick="start();">Start</button>&nbsp;&nbsp;
 <button style="color:red;" onclick="stop();">Stop</button>&nbsp;&nbsp;
 <br>
-<canvas id="canvas" width="400" height="400" style="border:1px solid black;float:right;"></canvas>
+<canvas id="canvas" width="400" height="400" style="border:1px solid black;float:left;"></canvas>
 <br>
 <div id="inputs">
 <table>
